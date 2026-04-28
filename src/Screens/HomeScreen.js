@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, PermissionsAndroid, Platform, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, StyleSheet, PermissionsAndroid, Platform, TouchableOpacity, TextInput, Image } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import Geolocation from "react-native-geolocation-service";
+import ServiceModal from "../components/ServiceModal";
 
 const HomeScreen = () => {
   console.log("=== HomeScreen rendered ===");
@@ -13,12 +14,14 @@ const HomeScreen = () => {
   const [destinationText, setDestinationText] = useState("");
   const [selectedService, setSelectedService] = useState("taxi");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
 
   const services = [
-    { key: "home", title: "Home Services", subtitle: "Repair, cleaning", eta: "12 min", fare: "from Rs 149" },
-    { key: "porter", title: "Porter", subtitle: "Move goods fast", eta: "9 min", fare: "from Rs 99" },
-    { key: "taxi", title: "Taxi", subtitle: "Book nearby rides", eta: "4 min", fare: "from Rs 129" },
-    { key: "delivery", title: "Delivery", subtitle: "Send packages", eta: "18 min", fare: "from Rs 89" },
+    { key: "home", title: "Home Services", subtitle: "Repair, cleaning", eta: "12 min", fare: "from Rs 149", icon: require("../assets/Home_Service.png") },
+    { key: "porter", title: "Porter", subtitle: "Move goods fast", eta: "9 min", fare: "from Rs 99", icon: require("../assets/Porter.png") },
+    { key: "taxi", title: "Taxi", subtitle: "Book nearby rides", eta: "4 min", fare: "from Rs 129", icon: require("../assets/Taxi.png") },
+    { key: "delivery", title: "Delivery", subtitle: "Send packages", eta: "18 min", fare: "from Rs 89", icon: require("../assets/Delivery.png") },
   ];
 
   const initialRegion = {
@@ -179,6 +182,17 @@ const HomeScreen = () => {
     setIsSheetOpen(false);
   };
 
+  const handleServiceSelect = (service) => {
+    setSelectedService(service.key);
+    setSelectedServiceDetails(service);
+    setIsServiceModalOpen(true);
+  };
+
+  const handleBookService = (service) => {
+    console.log(`Booking ${service.title}`);
+    // Add booking logic here
+  };
+
   return (
     <View style={styles.container}>
       <MapView
@@ -227,7 +241,7 @@ const HomeScreen = () => {
       <TouchableOpacity
         style={[
           styles.recenterButton,
-          isSheetOpen ? styles.recenterButtonRaised : styles.recenterButtonLower,
+          isSheetOpen ? styles.recenterButtonHigh : styles.recenterButtonLow,
           !userLocation && styles.recenterButtonDisabled,
         ]}
         onPress={recenterToUser}
@@ -238,17 +252,15 @@ const HomeScreen = () => {
 
       {isSheetOpen ? (
         <View style={styles.bottomSheet}>
-          <TouchableOpacity style={styles.sheetHandleTouch} onPress={() => setIsSheetOpen(false)} activeOpacity={0.8}>
+          <TouchableOpacity 
+            style={styles.sheetHandleTouch} 
+            onPress={() => setIsSheetOpen(false)} 
+            activeOpacity={0.8}
+          >
             <View style={styles.sheetHandle} />
           </TouchableOpacity>
 
-          <View style={styles.sheetHeaderRow}>
-            <Text style={styles.sheetTitle}>Choose Service</Text>
-            <TouchableOpacity style={styles.collapseButton} onPress={() => setIsSheetOpen(false)}>
-              <Text style={styles.collapseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-
+          <Text style={styles.sheetTitle}>Choose Service</Text>
           <Text style={styles.sheetStatus}>{permissionStatus}</Text>
 
           <View style={styles.servicesList}>
@@ -260,10 +272,10 @@ const HomeScreen = () => {
                   selectedService === service.key && styles.serviceCardActive,
                 ]}
                 activeOpacity={0.85}
-                onPress={() => setSelectedService(service.key)}
+                onPress={() => handleServiceSelect(service)}
               >
                 <View style={styles.serviceIconWrap}>
-                  <Text style={styles.serviceIconText}>{service.title.charAt(0)}</Text>
+                  <Image source={service.icon} style={styles.serviceIconImage} resizeMode="contain" />
                 </View>
 
                 <View style={styles.serviceMeta}>
@@ -281,7 +293,14 @@ const HomeScreen = () => {
         </View>
       ) : (
         <View style={styles.collapsedSheetTab}>
-          <View style={styles.sheetHandle} />
+          <TouchableOpacity 
+            style={styles.sheetHandleTouch} 
+            onPress={() => setIsSheetOpen(true)} 
+            activeOpacity={0.8}
+          >
+            <View style={styles.sheetHandle} />
+          </TouchableOpacity>
+          
           <View style={styles.collapsedServicesRow}>
             {services.map((service) => (
               <TouchableOpacity
@@ -293,17 +312,29 @@ const HomeScreen = () => {
                 onPress={() => setSelectedService(service.key)}
                 activeOpacity={0.85}
               >
-                <Text style={styles.collapsedServiceIcon}>{service.title.charAt(0)}</Text>
+                <Image source={service.icon} style={styles.collapsedServiceIconImage} resizeMode="contain" />
                 <Text style={styles.collapsedServiceLabel}>{service.title.split(" ")[0]}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <TouchableOpacity style={styles.collapsedMoreButton} onPress={() => setIsSheetOpen(true)} activeOpacity={0.9}>
-            <Text style={styles.collapsedMoreText}>More</Text>
-          </TouchableOpacity>
+          {/* <TouchableOpacity 
+            style={styles.collapsedMoreButton} 
+            onPress={() => setIsSheetOpen(true)} 
+            activeOpacity={0.9}
+          >
+            <Text style={styles.collapsedMoreText}>OPEN</Text>
+          </TouchableOpacity> */}
         </View>
       )}
+
+      {/* Service Details Modal */}
+      <ServiceModal
+        visible={isServiceModalOpen}
+        onClose={() => setIsServiceModalOpen(false)}
+        service={selectedServiceDetails}
+        onBook={handleBookService}
+      />
     </View>
   );
 };
@@ -404,11 +435,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
   },
-  recenterButtonRaised: {
-    bottom: 402,
+  recenterButtonHigh: {
+    bottom: 420,
   },
-  recenterButtonLower: {
-    bottom: 108,
+  recenterButtonLow: {
+    bottom: 120,
   },
   recenterButtonDisabled: {
     backgroundColor: "#6b7280"
@@ -437,7 +468,8 @@ const styles = StyleSheet.create({
   },
   sheetHandleTouch: {
     alignItems: "center",
-    paddingBottom: 2,
+    paddingVertical: 8,
+    paddingBottom: 12,
   },
   sheetHandle: {
     alignSelf: "center",
@@ -445,28 +477,12 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 999,
     backgroundColor: "#cbd5e1",
-    marginBottom: 10
-  },
-  sheetHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  collapseButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "#e2e8f0",
-  },
-  collapseButtonText: {
-    color: "#1e293b",
-    fontSize: 12,
-    fontWeight: "700",
   },
   sheetTitle: {
     fontSize: 19,
     fontWeight: "800",
-    color: "#111827"
+    color: "#111827",
+    marginBottom: 4,
   },
   sheetStatus: {
     marginTop: 4,
@@ -495,15 +511,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 9,
-    backgroundColor: "#111827",
+    backgroundColor: "#f0f0f0",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
   },
-  serviceIconText: {
-    color: "#f8fafc",
-    fontSize: 16,
-    fontWeight: "700",
+  serviceIconImage: {
+    width: 22,
+    height: 22,
   },
   serviceMeta: {
     flex: 1,
@@ -569,10 +584,10 @@ const styles = StyleSheet.create({
     borderColor: "#111827",
     backgroundColor: "#f1f5f9",
   },
-  collapsedServiceIcon: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#0f172a",
+  collapsedServiceIconImage: {
+    width: 24,
+    height: 24,
+    marginBottom: 4,
   },
   collapsedServiceLabel: {
     marginTop: 2,
@@ -582,16 +597,21 @@ const styles = StyleSheet.create({
   },
   collapsedMoreButton: {
     alignSelf: "center",
-    marginTop: 10,
-    backgroundColor: "#e2e8f0",
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    marginTop: 12,
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   collapsedMoreText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#fff",
   }
 });
 
