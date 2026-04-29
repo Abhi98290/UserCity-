@@ -1,13 +1,21 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, SafeAreaView, Platform, StatusBar } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, SafeAreaView, StatusBar } from "react-native";
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const RideBookingScreen = ({ route, navigation }) => {
-  const { service = {}, pickup, drop } = route.params || {};
+  const { service = {}, pickup, drop, userLocation } = route.params || {};
   const [pickupLocation, setPickupLocation] = useState(pickup?.address || "");
   const [dropLocation, setDropLocation] = useState(drop?.address || "");
   const [pickupCoords, setPickupCoords] = useState(pickup || null);
   const [dropCoords, setDropCoords] = useState(drop || null);
+  const [selectedVehicle, setSelectedVehicle] = useState("auto");
+
+  const vehicles = [
+    { id: "bike", name: "Bike", icon: require("../assets/motorcycle.png"), price: "₹49" },
+    { id: "auto", name: "Auto", icon: require("../assets/rickshaw.png"), price: "₹79" },
+    { id: "car", name: "Car", icon: require("../assets/car.png"), price: "₹129" },
+    { id: "suv", name: "SUV", icon: require("../assets/SUV.png"), price: "₹199" },
+  ];
 
   // Update locations when params change
   React.useEffect(() => {
@@ -55,7 +63,14 @@ const RideBookingScreen = ({ route, navigation }) => {
             style={styles.inputContainer}
             onPress={() => navigation.navigate('LocationPicker', { 
               locationType: 'pickup',
-              returnScreen: 'RideBooking'
+              returnScreen: 'RideBooking',
+              userLocation: userLocation,
+              existingParams: {
+                service,
+                pickup: pickupCoords,
+                drop: dropCoords,
+                userLocation,
+              }
             })}
           >
             <View style={[styles.locationDot, { backgroundColor: "#10b981" }]} />
@@ -78,7 +93,14 @@ const RideBookingScreen = ({ route, navigation }) => {
             style={styles.inputContainer}
             onPress={() => navigation.navigate('LocationPicker', { 
               locationType: 'drop',
-              returnScreen: 'RideBooking'
+              returnScreen: 'RideBooking',
+              userLocation: userLocation,
+              existingParams: {
+                service,
+                pickup: pickupCoords,
+                drop: dropCoords,
+                userLocation,
+              }
             })}
           >
             <View style={[styles.locationDot, { backgroundColor: "#ef4444" }]} />
@@ -92,19 +114,24 @@ const RideBookingScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Quick Suggestions */}
-        <View style={styles.suggestionsSection}>
-          <Text style={styles.sectionTitle}>Quick Picks</Text>
-          <View style={styles.suggestionRow}>
-            <TouchableOpacity style={styles.suggestionChip}>
-              <Text style={styles.suggestionText}>🏠 Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.suggestionChip}>
-              <Text style={styles.suggestionText}>💼 Work</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.suggestionChip}>
-              <Text style={styles.suggestionText}>📍 Saved</Text>
-            </TouchableOpacity>
+        {/* Vehicle Type Selection */}
+        <View style={styles.vehicleSection}>
+          <Text style={styles.sectionTitle}>Select Vehicle Type</Text>
+          <View style={styles.vehicleRow}>
+            {vehicles.map((vehicle) => (
+              <TouchableOpacity
+                key={vehicle.id}
+                style={[
+                  styles.vehicleCard,
+                  selectedVehicle === vehicle.id && styles.vehicleCardActive,
+                ]}
+                onPress={() => setSelectedVehicle(vehicle.id)}
+              >
+                <Image source={vehicle.icon} style={styles.vehicleIcon} resizeMode="contain" />
+                <Text style={styles.vehicleName}>{vehicle.name}</Text>
+                <Text style={styles.vehiclePrice}>{vehicle.price}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -133,7 +160,13 @@ const RideBookingScreen = ({ route, navigation }) => {
               drop: dropCoords, 
               service 
             });
-            navigation.goBack();
+            navigation.navigate('RideTracking', {
+              pickup: pickupCoords,
+              drop: dropCoords,
+              service,
+              pickupAddress: pickupLocation,
+              dropAddress: dropLocation,
+            });
           }}
         >
           <Text style={styles.confirmButtonText}>Confirm Booking</Text>
@@ -147,14 +180,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f9fafb",
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#fff",
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
@@ -270,11 +302,47 @@ const styles = StyleSheet.create({
     width: 2,
     height: 24,
     backgroundColor: "#d1d5db",
-    // marginLeft: 5,
     marginVertical: 0,
     borderStyle: "dashed",
     borderWidth: 1,
     borderColor: "#d1d5db",
+  },
+  vehicleSection: {
+    marginBottom: 16,
+  },
+  vehicleRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  vehicleCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#e5e7eb",
+    elevation: 2,
+  },
+  vehicleCardActive: {
+    borderColor: "#111827",
+    backgroundColor: "#f9fafb",
+  },
+  vehicleIcon: {
+    width: 40,
+    height: 40,
+    marginBottom: 8,
+  },
+  vehicleName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  vehiclePrice: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "500",
   },
   suggestionsSection: {
     marginBottom: 16,

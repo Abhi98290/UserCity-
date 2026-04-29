@@ -11,6 +11,7 @@ import ProfileScreen from "./src/Screens/ProfileScreen";
 import RideBookingScreen from "./src/Screens/RideBookingScreen";
 import ServiceBookingScreen from "./src/Screens/ServiceBookingScreen";
 import LocationPickerScreen from "./src/Screens/LocationPickerScreen";
+import RideTrackingScreen from "./src/Screens/RideTrackingScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -148,6 +149,11 @@ const App = () => {
         <Stack.Screen 
           name="LocationPicker" 
           component={LocationPickerScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="RideTracking" 
+          component={RideTrackingScreen} 
           options={{ headerShown: false }} 
         />
       </Stack.Navigator>

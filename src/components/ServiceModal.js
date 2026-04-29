@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const ServiceModal = ({ visible, onClose, service, onBook }) => {
+const ServiceModal = ({ visible, onClose, service, onBook, userLocation }) => {
   const navigation = useNavigation();
   
   if (!service) return null;
@@ -12,7 +12,7 @@ const ServiceModal = ({ visible, onClose, service, onBook }) => {
     
     // Navigate based on service type
     if (service.key === 'taxi' || service.key === 'porter') {
-      navigation.navigate('RideBooking', { service });
+      navigation.navigate('RideBooking', { service, userLocation });
     } else {
       navigation.navigate('ServiceBooking', { service });
     }

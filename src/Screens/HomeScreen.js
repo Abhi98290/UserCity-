@@ -334,6 +334,7 @@ const HomeScreen = () => {
         onClose={() => setIsServiceModalOpen(false)}
         service={selectedServiceDetails}
         onBook={handleBookService}
+        userLocation={userLocation}
       />
     </View>
   );
